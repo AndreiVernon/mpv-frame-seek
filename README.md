@@ -6,6 +6,9 @@ By default the script uses the following keybinds:
 - `Ctrl+t` to seek by timestamp
 - `Ctrl+T` to seek by frame number
 
+You can then use the number keys, `:`, and `.` as input.\
+Press `ENTER` to seek when done, or `ESC` to cancel at anytime.
+
 When seeking by frame number, you just have to input said number.\
 The script also lets you enter fractional values here, so you can also seek at a sub-frame level. Go wild!
 
