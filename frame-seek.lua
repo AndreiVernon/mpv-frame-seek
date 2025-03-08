@@ -144,5 +144,5 @@ function activate_timestamp_mode()
 end
 
 -- Register key bindings
-mp.add_key_binding(nil, "seek-timestamp", activate_timestamp_mode)
-mp.add_key_binding(nil, "seek-frame", activate_frame_mode)
+mp.add_key_binding("ctrl+t", "seek-timestamp", activate_timestamp_mode)
+mp.add_key_binding("ctrl+T", "seek-frame", activate_frame_mode)
