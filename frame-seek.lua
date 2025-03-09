@@ -32,41 +32,45 @@ end
 function seek_to_frame(frame_num)
     local fps = mp.get_property_number("estimated-vf-fps")
     if not fps or fps <= 0 then
-        mp.osd_message("Error: Cannot determine video framerate")
+        mp.osd_message("Error: Cannot determine framerate")
         return
     end
     
     local timestamp = frame_num / fps
-    mp.commandv("seek", timestamp, "absolute+exact")
-    mp.osd_message(string.format("Seeking to frame %d (%.3f seconds)", frame_num, timestamp))
+	local message = string.format("Seeking to frame %f", frame_num) .. " (%s)"
+	seek_to_timestamp(timestamp, message)
 end
 
-function seek_to_timestamp(timestamp)
+function seek_to_timestamp(timestamp, message)
     mp.commandv("seek", timestamp, "absolute+exact")
     
     -- Format the display nicely
     local hours = math.floor(timestamp / 3600)
     local minutes = math.floor((timestamp % 3600) / 60)
-    local seconds = timestamp % 60
+    local seconds = math.floor(timestamp % 60)
+	local miliseconds = math.floor((timestamp % 1) * 100)
     
-    local display_time
-    if hours > 0 then
-        display_time = string.format("%02d:%02d:%06.3f", hours, minutes, seconds)
-    else
-        display_time = string.format("%02d:%06.3f", minutes, seconds)
+    local display_time = string.format("%02d:%02d", minutes, seconds)
+	
+    if hours ~= 0 then
+        display_time = string.format("%d:", hours) .. display_time
+	end
+
+    if miliseconds ~= 0 or jump_mode == "Frame" then
+        display_time = display_time .. string.format(".%03d", miliseconds)
     end
     
-    mp.osd_message(string.format("Seeking to %s", display_time))
+    mp.osd_message(string.format(message, display_time))
 end
 
 function digit_handler(digit)
     input = input .. digit
-    mp.osd_message(jump_mode .. ": " .. input, 100000)
+    mp.osd_message("Seek to "..jump_mode..": " .. input, 999999)
 end
 
 function backspace_handler()
     input = input:sub(1, -2)
-    mp.osd_message(jump_mode .. ": " .. input, 100000)
+    mp.osd_message("Seek to "..jump_mode..": " .. input, 999999)
 end
 
 function jump_go()
@@ -85,7 +89,7 @@ function jump_go()
     elseif jump_mode == "Timestamp" then
         local timestamp = parse_timestamp(input)
         if timestamp then
-            seek_to_timestamp(timestamp)
+            seek_to_timestamp(timestamp, "Seeking to %s")
         else
             mp.osd_message("Invalid timestamp format")
         end
@@ -133,14 +137,14 @@ function activate_frame_mode()
     jump_mode = "Frame"
     input = ""
     set_bindings()
-    mp.osd_message("Frame: ", 100000)
+    mp.osd_message("Seek to "..jump_mode..": ", 999999)
 end
 
 function activate_timestamp_mode()
     jump_mode = "Timestamp"
     input = ""
     set_bindings()
-    mp.osd_message("Timestamp: ", 100000)
+    mp.osd_message("Seek to "..jump_mode..": ", 999999)
 end
 
 -- Register key bindings
