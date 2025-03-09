@@ -3,6 +3,7 @@
 
 local input = ""
 local jump_mode = nil -- "frame" or "timestamp"
+local typing_message = nil
 local relative = false
 local minus = false
 
@@ -46,9 +47,10 @@ function seek_to_frame(frame_num)
 	local timestamp = frame_num / fps
 	
 	if minus then frame_num = -frame_num end
-	if relative then frame_num = frame_num + mp.get_property_number("estimated-frame-number") end
-	local message = string.format("Seeking to frame %d", frame_num) .. " (%s)"
 	
+	if relative then frame_num = frame_num + mp.get_property_number("estimated-frame-number") end
+	
+	local message = string.format("Seeking to frame %d", frame_num) .. " (%s)"
 	seek_to_timestamp(timestamp, message)
 end
 
@@ -67,15 +69,15 @@ function seek_to_timestamp(timestamp, message)
     local hours = math.floor(timestamp / 3600)
     local minutes = math.floor((timestamp % 3600) / 60)
     local seconds = math.floor(timestamp % 60)
-    local milliseconds = math.floor((timestamp % 1) * 1000 + 0.5)
-	
+	local milliseconds = math.floor((timestamp % 1) * 1000 + 0.5)
+    
     local display_time = string.format("%02d:%02d", minutes, seconds)
 	
     if hours ~= 0 then
         display_time = string.format("%d:", hours) .. display_time
 	end
 
-    if milliseconds ~= 0 or jump_mode == "Frame" then
+    if milliseconds ~= 0 or jump_mode == "frame" then
         display_time = display_time .. string.format(".%03d", milliseconds)
     end
     
@@ -87,12 +89,12 @@ function digit_handler(digit)
 	if digit == "-" and input ~= "" then return end
 	
     input = input .. digit
-    mp.osd_message("Seek to "..jump_mode..": " .. input, 999999)
+    mp.osd_message(typing_message .. input, 999999)
 end
 
 function backspace_handler()
     input = input:sub(1, -2)
-    mp.osd_message("Seek to "..jump_mode..": " .. input, 999999)
+    mp.osd_message(typing_message .. input, 999999)
 end
 
 function jump_go()
@@ -101,21 +103,18 @@ function jump_go()
         return
     end
 	
-	--remove (relative) from jump node
-	jump_mode, _ = string.gsub(jump_mode, " %(relative%)", "")
-	
 	--remove minus from beginning of input and turn it into bool
 	input, minus = string.gsub(input, "-", "")
 	minus = minus > 0
     
-    if jump_mode == "Frame" then
+    if jump_mode == "frame" then
         local frame_num = math.floor(tonumber(input))
         if frame_num then
             seek_to_frame(frame_num)
         else
             mp.osd_message("Invalid frame number")
         end
-    elseif jump_mode == "Timestamp" then
+    elseif jump_mode == "time" then
         local timestamp = parse_timestamp(input)
         if timestamp then
             seek_to_timestamp(timestamp, "Seeking to %s")
@@ -133,6 +132,7 @@ function reset()
 	minus = false
 	relative = false
     jump_mode = nil
+	typing_message = nil
     remove_bindings()
     mp.osd_message("")
 end
@@ -146,7 +146,7 @@ function remove_bindings()
     mp.remove_key_binding("bs-handler")
     mp.remove_key_binding("jump-go")
     mp.remove_key_binding("jump-quit")
-    mp.remove_key_binding("digit-minus")
+	mp.remove_key_binding("digit-minus")
 end
 
 function set_bindings()
@@ -168,17 +168,18 @@ function set_bindings()
     mp.add_forced_key_binding("ESC", "jump-quit", reset)
 end
 
-function run_script(mode)
+function run_script(mode, message, relative_flag)
 	if mp.get_property("path") == nil then return end
 	reset()
     jump_mode = mode
-	relative = string.find(jump_mode, "relative", 1, true) ~= nil
+	relative = relative_flag
+	typing_message = message
     set_bindings()
     mp.osd_message("Seek to "..jump_mode..": ", 999999)
 end
 
 -- Register key bindings
-mp.add_key_binding("ctrl+t", "seek-timestamp", function() run_script("Timestamp") end)
-mp.add_key_binding("ctrl+T", "seek-frame", function() run_script("Frame") end)
-mp.add_key_binding("ctrl+Alt+t", "seek-timestamp-relative", function() run_script("Timestamp (relative)") end)
-mp.add_key_binding("ctrl+Alt+T", "seek-frame-relative", function() run_script("Frame (relative)") end)
+mp.add_key_binding("ctrl+t", "seek-timestamp", function() run_script("time", "Seek to time: ", false) end)
+mp.add_key_binding("ctrl+T", "seek-frame", function() run_script("frame", "Seek to frame: ", false) end)
+mp.add_key_binding("ctrl+Alt+t", "seek-timestamp-relative", function() run_script("time", "Seek forward by time: ", true) end)
+mp.add_key_binding("ctrl+Alt+T", "seek-frame-relative", function() run_script("frame", "Seek forward by frame: ", true) end)
