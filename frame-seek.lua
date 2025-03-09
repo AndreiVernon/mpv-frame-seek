@@ -3,6 +3,8 @@
 
 local input = ""
 local jump_mode = nil -- "frame" or "timestamp"
+local relative = false
+local minus = false
 
 function parse_timestamp(input_str)
     -- Format: HH:MM:SS.ss or MM:SS.ss or SS.ss or just seconds
@@ -24,7 +26,12 @@ function parse_timestamp(input_str)
     local seconds = input_str:match("^(%d+%.?%d*)$")
     if seconds then
         return tonumber(seconds)
-    end
+    else
+		local milliseconds = input_str:match("^%.(%d+)$")
+		if milliseconds ~= nil then
+			return tonumber("0." .. milliseconds)
+		end
+	end
     
     return nil
 end
@@ -35,35 +42,50 @@ function seek_to_frame(frame_num)
         mp.osd_message("Error: Cannot determine framerate")
         return
     end
-    
-    local timestamp = frame_num / fps
-	local message = string.format("Seeking to frame %f", frame_num) .. " (%s)"
+	
+	local timestamp = frame_num / fps
+	
+	if minus then frame_num = -frame_num end
+	if relative then frame_num = frame_num + mp.get_property_number("estimated-frame-number") end
+	local message = string.format("Seeking to frame %d", frame_num) .. " (%s)"
+	
 	seek_to_timestamp(timestamp, message)
 end
 
 function seek_to_timestamp(timestamp, message)
-    mp.commandv("seek", timestamp, "absolute+exact")
-    
+	if minus then timestamp = -timestamp end
+	
+	local pre_timestamp = timestamp
+	if relative then pre_timestamp = mp.get_property_number("time-pos") + timestamp end
+
+    if relative then mp.commandv("seek", timestamp, "exact")
+	else mp.commandv("seek", timestamp, "absolute+exact") end
+	
+	timestamp = pre_timestamp
+	
     -- Format the display nicely
     local hours = math.floor(timestamp / 3600)
     local minutes = math.floor((timestamp % 3600) / 60)
     local seconds = math.floor(timestamp % 60)
-	local miliseconds = math.floor((timestamp % 1) * 100)
-    
+    local milliseconds = math.floor((timestamp % 1) * 1000 + 0.5)
+	
     local display_time = string.format("%02d:%02d", minutes, seconds)
 	
     if hours ~= 0 then
         display_time = string.format("%d:", hours) .. display_time
 	end
 
-    if miliseconds ~= 0 or jump_mode == "Frame" then
-        display_time = display_time .. string.format(".%03d", miliseconds)
+    if milliseconds ~= 0 or jump_mode == "Frame" then
+        display_time = display_time .. string.format(".%03d", milliseconds)
     end
     
     mp.osd_message(string.format(message, display_time))
 end
 
 function digit_handler(digit)
+	-- Only let minus at the beginning of input
+	if digit == "-" and input ~= "" then return end
+	
     input = input .. digit
     mp.osd_message("Seek to "..jump_mode..": " .. input, 999999)
 end
@@ -75,12 +97,19 @@ end
 
 function jump_go()
     if input == "" then
-        jump_quit()
+        reset()
         return
     end
+	
+	--remove (relative) from jump node
+	jump_mode, _ = string.gsub(jump_mode, " %(relative%)", "")
+	
+	--remove minus from beginning of input and turn it into bool
+	input, minus = string.gsub(input, "-", "")
+	minus = minus > 0
     
     if jump_mode == "Frame" then
-        local frame_num = tonumber(input)
+        local frame_num = math.floor(tonumber(input))
         if frame_num then
             seek_to_frame(frame_num)
         else
@@ -99,8 +128,10 @@ function jump_go()
     remove_bindings()
 end
 
-function jump_quit()
+function reset()
     input = ""
+	minus = false
+	relative = false
     jump_mode = nil
     remove_bindings()
     mp.osd_message("")
@@ -115,6 +146,7 @@ function remove_bindings()
     mp.remove_key_binding("bs-handler")
     mp.remove_key_binding("jump-go")
     mp.remove_key_binding("jump-quit")
+    mp.remove_key_binding("digit-minus")
 end
 
 function set_bindings()
@@ -127,26 +159,26 @@ function set_bindings()
     
     -- Add colon for time format
     mp.add_forced_key_binding(":", "digit-colon", function() digit_handler(":") end)
+	
+	-- Add minus for negative numbers (relative)
+	if relative then mp.add_forced_key_binding("-", "digit-minus", function() digit_handler("-") end) end
     
     mp.add_forced_key_binding("BS", "bs-handler", backspace_handler)
     mp.add_forced_key_binding("ENTER", "jump-go", jump_go)
-    mp.add_forced_key_binding("ESC", "jump-quit", jump_quit)
+    mp.add_forced_key_binding("ESC", "jump-quit", reset)
 end
 
-function activate_frame_mode()
-    jump_mode = "Frame"
-    input = ""
-    set_bindings()
-    mp.osd_message("Seek to "..jump_mode..": ", 999999)
-end
-
-function activate_timestamp_mode()
-    jump_mode = "Timestamp"
-    input = ""
+function run_script(mode)
+	if mp.get_property("path") == nil then return end
+	reset()
+    jump_mode = mode
+	relative = string.find(jump_mode, "relative", 1, true) ~= nil
     set_bindings()
     mp.osd_message("Seek to "..jump_mode..": ", 999999)
 end
 
 -- Register key bindings
-mp.add_key_binding("ctrl+t", "seek-timestamp", activate_timestamp_mode)
-mp.add_key_binding("ctrl+T", "seek-frame", activate_frame_mode)
+mp.add_key_binding("ctrl+t", "seek-timestamp", function() run_script("Timestamp") end)
+mp.add_key_binding("ctrl+T", "seek-frame", function() run_script("Frame") end)
+mp.add_key_binding("ctrl+Alt+t", "seek-timestamp-relative", function() run_script("Timestamp (relative)") end)
+mp.add_key_binding("ctrl+Alt+T", "seek-frame-relative", function() run_script("Frame (relative)") end)
