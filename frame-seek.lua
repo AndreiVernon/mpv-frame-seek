@@ -175,7 +175,7 @@ function run_script(mode, message, relative_flag)
 	relative = relative_flag
 	typing_message = message
     set_bindings()
-    mp.osd_message("Seek to "..jump_mode..": ", 999999)
+    mp.osd_message(typing_message, 999999)
 end
 
 -- Register key bindings
