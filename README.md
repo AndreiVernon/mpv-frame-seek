@@ -1,7 +1,7 @@
 # frame-seek.lua
 MPV script that can seek to an arbitrary timestamp or frame number
 
-![mpv-frame-seek](https://github.com/user-attachments/assets/ded9b1c3-a4b3-4134-9f1a-e21d8bf34957)
+![Preview](https://github.com/user-attachments/assets/03c7014e-134d-478e-bbc8-c056fefe239a)
 
 ## Usage
 By default the script uses the following keybinds:
