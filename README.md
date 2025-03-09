@@ -23,6 +23,14 @@ When seeking by timestamp, you can use the following formats:
 Miliseconds can be left out in any format, so you have a lot of freedom with this.\
 Days are not included, so if you have an extremely long file for some reason, just use the total number of hours.
 
+## Limitations
+
+Frame seeking will only work for Constant Frame Rate content!\
+There may also be scenarios where the framerate isn't detected accurately, as it is based on mpv's framerate estimates.\
+Normal timestamp seeking should work just fine on any content though, including audio.
+
+If you want something with perfect frame seeking, check out [VapourSynth](https://github.com/vapoursynth/vapoursynth) and [BestSource](https://github.com/vapoursynth/bestsource).
+
 ## Custom bindings
 
 If you want to use your own keybinds, just put the following in your `input.conf` file:
