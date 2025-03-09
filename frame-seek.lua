@@ -69,7 +69,7 @@ function seek_to_timestamp(timestamp, message)
     local hours = math.floor(timestamp / 3600)
     local minutes = math.floor((timestamp % 3600) / 60)
     local seconds = math.floor(timestamp % 60)
-	local milliseconds = math.floor((timestamp % 1) * 1000 + 0.5)
+    local milliseconds = math.floor((timestamp % 1) * 1000 + 0.5)
     
     local display_time = string.format("%02d:%02d", minutes, seconds)
 	
