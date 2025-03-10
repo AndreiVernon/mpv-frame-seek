@@ -1,5 +1,5 @@
 # frame-seek.lua
-MPV script that can seek to an arbitrary timestamp or frame number
+[mpv](https://github.com/mpv-player/mpv) script that can seek to an arbitrary timestamp or frame number
 
 ![Preview](https://github.com/user-attachments/assets/03c7014e-134d-478e-bbc8-c056fefe239a)
 
