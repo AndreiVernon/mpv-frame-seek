@@ -10,20 +10,20 @@ local fps = 0
 
 function parse_timestamp(input_str)
     -- Formats:
-	-- HH:MM:SS.ss
-	-- MM:SS.ss
-	-- SS.ss
-	-- .ss
+	-- HH:MM:SS.ms
+	-- MM:SS.ms
+	-- SS.ms
+	-- .ms
 
 	-- More than 60 minutes or seconds can be entered - it will seek any amount accurately
     
-    -- First try to match HH:MM:SS.ss
+    -- First try to match HH:MM:SS.ms
     local hours, minutes, seconds = input_str:match("^(%d+):(%d+):(%d+%.?%d*)$")
     if hours and minutes and seconds then
         return tonumber(hours) * 3600 + tonumber(minutes) * 60 + tonumber(seconds)
     end
     
-    -- Try to match MM:SS.ss
+    -- Try to match MM:SS.ms
     local minutes, seconds = input_str:match("^(%d+):(%d+%.?%d*)$")
     if minutes and seconds then
         return tonumber(minutes) * 60 + tonumber(seconds)
@@ -67,10 +67,11 @@ function seek_to_timestamp(timestamp)
         if math.abs(timestamp) < 10 then
             mp.commandv("seek", timestamp, "exact")
         else
-            --only show gui if seek >10s
+            -- Only show OSD if seek >10s
             mp.command("seek " .. timestamp .. " exact")
         end
 	else
+        -- Handle imprecise float
         if math.abs(timestamp - cur_time) < 1e-7 then return end
         mp.command("seek " .. timestamp .. " absolute+exact")
     end
@@ -112,12 +113,13 @@ function jump_submit(input)
 		return
 	end
 
+    -- Handle relative marker
     if input:sub(1, 1) == "r" then
         relative = true
         input = input:sub(2)
     end
 
-    --remove minus from beginning of input and turn it into bool
+    -- Handle negative input
 	minus = false
     if input:sub(1, 1) == "-" then
         minus = true
