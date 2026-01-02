@@ -5,8 +5,8 @@
 
 ## Usage
 By default the script uses the following keybinds:
-- `Ctrl+t` to seek to timestamp
-- `Ctrl+T` to seek to frame number
+- `Ctrl+t` to seek to **timestamp**
+- `Ctrl+T` to seek to **frame number**
 
 Input the desired timestamp or frame number, and press `ENTER` to seek when done or `ESC` to cancel at anytime.
 
@@ -15,11 +15,11 @@ When seeking by timestamp, you can use the following formats:
 - `MM:SS.ms`
 - `SS.ms`
 
-For relative seeks, add an `r` at the beginning of the timestamp or frame. \
-For example, `r-01:10` will seek backwards by 1 minute and 10 seconds. \
+For **relative seeks**, add an `r` at the beginning of the timestamp or frame.\
+For example, `r-01:10` will seek backwards by 1 minute and 10 seconds.\
 This can also be triggered with the [custom keybinds](#custom-keybinds) below.
 
-In absolute mode, negative timestamps will seek backwards from the end of the file. \
+In absolute mode, negative timestamps will seek backwards from the end of the file.\
 In other words, an absolute seek of `-10` will jump to 10 seconds before the end of the file.
 
 ## Custom keybinds
@@ -32,7 +32,7 @@ This can also be used to rebind the default keybinds, `seek-timestamp` and `seek
 
 ## Limitations
 
-Frame seeking will only work for Constant Frame Rate content!\
+Frame seeking will only work for Constant Frame Rate content.\
 There may also be scenarios where the framerate isn't detected accurately, as it is based on mpv's framerate estimates.\
 Normal timestamp seeking should work just fine on any content though, including audio.
 
